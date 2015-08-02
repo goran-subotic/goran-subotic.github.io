@@ -1,0 +1,162 @@
+---
+author: savo
+layout: post
+title:  "Tsung"
+date:   2015-07-31 14:34:25
+categories: load testing tsung
+tags: load testing tsung
+#image: /assets/article_images/2014-08-29-welcome-to-jekyll/desktop.JPG
+visible: 1
+---
+
+## Introduction
+
+Tsung is an open-source multi-protocol distributed load testing tool.
+It can be used to stress HTTP, WebDAV, SOAP, PostgreSQL, MySQL, LDAP and Jabber/XMPP servers.
+It can be distributed on several client machines and is able to simulate hundreds of thousands of virtual users concurrently.
+Tsung is developed in Erlang.
+
+It's main features are:
+
+* High Performance: the load can be distributed on a cluster of client machines
+* Multi-protocols using a plugin system: HTTP, WebDAV, SOAP, PostgreSQL, MySQL, LDAP , XMPP/Jabber, BOSH, MQTT and AMQP are currently supported. SSL is also supported.
+* Several IP addresses can be used on a single machine using the underlying OS IP Aliasing
+* OS monitoring (CPU, memory and network traffic) using SNMP, Munin or Erlang agents on remote servers.
+* XML configuration system; several sessions can be used to simulate different type of users.
+  Dynamic sessions can be easily described in XML (this can be used to retrieve at runtime an ID from the server output and use it later in the session).
+* In order to generate a realistic traffic, user think-times and the arrival rate can be randomize using a probability distribution
+* HTML reports can be generated during the load to view response times measurement, server CPU, etc.
+
+> XMPP (Jabber)
+  * Authentication, presence and register messages
+  * Chat messages to online or offline users
+  * Roster set and get requests
+  * Global users' synchronization can be set on specific actions
+  * PubSub, MUC, Virtual Hosts
+  * BOSH & XMPP over Websocket
+
+## Step One - Installation steps on Ubuntu 14.04.2
+```sh
+sudo apt-get install tsung
+```
+*Ubuntu's Tsung package version is 1.4.2, so we have to compile it to get version 1.5.0*
+
+```sh
+$ sudo apt-get install build-essential debhelper
+$ sudo apt-get install erlang-nox erlang-dev
+$ sudo apt-get install python-matplotlib gnuplot
+$ sudo apt-get install libtemplate-perl
+```
+
+```sh
+$ wget https://github.com/processone/tsung/archive/v1.5.0.tar.gz
+$ tar -xvzf v1.5.0.tar.gz
+$ cd tsung-1.5.0
+$ ./configure
+$ make
+$ make deb
+$ cd ..
+$ sudo dpkg -i tsung_1.5.0-1_all.deb
+```
+
+Run `tsung -v` to check that tsung is indeed installed.
+
+## Step Two - Distributed Tsung
+
+To run Tsung across machines, you have to:
+
+> 1.  Install Erlang and Tsung on all the machines - make sure all machines have the same versions of both Erlang and Tsung
+
+> 2.  Open ports for access in the machines to each other : port range 0 - 65535
+To turn on the firewall, enter **`sudo ufw enable`** in a terminal. To turn off ufw, enter **`sudo ufw disable`**
+**`sudo ufw allow 1:65535`**
+
+> 3.  Configure hostname on both machines for each other, because the tsung configuration demands host names and not ips,
+    and those machines need to know how to talk to each other using those host names.
+
+
+Although Tsung can be executed on a large number of servers we’ll keep this introduction simple, and just demonstrate testing from two servers.
+
+Tsung communicates between testing nodes using SSH, so **make sure your SSH keys are installed on the servers and that you can SSH between them without a password prompt.**
+
+If ssh is not installed type the following:
+
+```
+sudo apt-get install openssh-server
+```
+
+UFW, or Uncomplicated Firewall, is a front-end to iptables:
+
+```
+sudo ufw allow 22
+```
+
+3 Steps to Perform SSH Login Without Password Using ssh-keygen & ssh-copy-id
+
+You can login to a remote Linux server without entering password.
+ssh-keygen creates the public and private keys.
+ssh-copy-id copies the local-host’s public key to the remote-host’s authorized_keys file.
+
+**Step 1:** Create public and private keys using ssh-key-gen on local-host
+`ssh-keygen`
+Enter file in which to save the key (~/.ssh/id_rsa):[Enter key]
+Enter passphrase (empty for no passphrase): [Press enter key]
+Enter same passphrase again: [Pess enter key]
+Your identification has been saved in ~/.ssh/id_rsa. 
+Your public key has been saved in ~/.ssh/id_rsa.pub.
+**Step 2:** Copy the public key to remote-host using ssh-copy-id                                 
+`ssh-copy-id -i ~/.ssh/id_rsa.pub remote-host`
+**Step 3:** Login to remote-host without entering the password
+`ssh remote-host`
+
+
+
+### Tsung configuration xml file (tsung-test.xml):
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd" []>
+<tsung loglevel="warning">
+
+  <clients>
+    <client host="t1" cpu="2" maxusers="30000000"/>
+    <client host="t2" cpu="2" maxusers="30000000"/>
+  </clients>
+
+  <servers>
+    <server host="localhost" port="9200" type="tcp"/>
+  </servers>
+
+  <load>
+    <arrivalphase phase="1" duration="1" unit="minute">
+      <users arrivalrate="5" unit="second"/>
+    </arrivalphase>
+  </load>
+
+  <sessions>
+    <session name="es_load" weight="1" type="ts_http">
+      <request>
+      <http url="/fooindex/issue/_search"
+              method="GET"
+              contents_from_file="basic.json" />
+      </request>
+    </session>
+  </sessions>
+</tsung>
+```
+
+We then launch the test, specifying the XML file
+
+```
+tsung -f tsung-test.xml start
+Starting Tsung
+"Log directory is: ~/.tsung/log/20150731-1019"
+```
+
+This will output a number of files in the named directory,
+and we can then create a graphical report of the results using a companion utility which was installed alongside tsung:
+
+```
+$ cd ~/.tsung/log/20150731-1019
+$ /usr/lib/tsung/bin/tsung_stats.pl
+```
