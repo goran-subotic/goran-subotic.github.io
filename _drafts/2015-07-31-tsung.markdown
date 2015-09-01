@@ -27,16 +27,8 @@ It's main features are:
 * In order to generate a realistic traffic, user think-times and the arrival rate can be randomize using a probability distribution
 * HTML reports can be generated during the load to view response times measurement, server CPU, etc.
 
-> XMPP (Jabber)
-  * Authentication, presence and register messages
-  * Chat messages to online or offline users
-  * Roster set and get requests
-  * Global users' synchronization can be set on specific actions
-  * PubSub, MUC, Virtual Hosts
-  * BOSH & XMPP over Websocket
-
 ## Step One - Installation steps on Ubuntu 14.04.2
-```sh
+```
 sudo apt-get install tsung
 ```
 *Ubuntu's Tsung package version is 1.4.2, so we have to compile it to get version 1.5.0*
@@ -65,19 +57,19 @@ Run `tsung -v` to check that tsung is indeed installed.
 
 To run Tsung across machines, you have to:
 
-> 1.  Install Erlang and Tsung on all the machines - make sure all machines have the same versions of both Erlang and Tsung
+1.  Install Erlang and Tsung on all the machines - make sure all machines have the same versions of both Erlang and Tsung
 
-> 2.  Open ports for access in the machines to each other : port range 0 - 65535
+2.  Open ports for access in the machines to each other : port range 0 - 65535
 To turn on the firewall, enter **`sudo ufw enable`** in a terminal. To turn off ufw, enter **`sudo ufw disable`**
 **`sudo ufw allow 1:65535`**
 
-> 3.  Configure hostname on both machines for each other, because the tsung configuration demands host names and not ips,
+3.  Configure hostname on both machines for each other, because the tsung configuration demands host names and not ips,
     and those machines need to know how to talk to each other using those host names.
 
 
 Although Tsung can be executed on a large number of servers we’ll keep this introduction simple, and just demonstrate testing from two servers.
 
-Tsung communicates between testing nodes using SSH, so **make sure your SSH keys are installed on the servers and that you can SSH between them without a password prompt.**
+Tsung communicates between test nodes using SSH, so **make sure your SSH keys are installed on the servers and that you can SSH between them without a password prompt.**
 
 If ssh is not installed type the following:
 
@@ -97,16 +89,21 @@ You can login to a remote Linux server without entering password.
 ssh-keygen creates the public and private keys.
 ssh-copy-id copies the local-host’s public key to the remote-host’s authorized_keys file.
 
-**Step 1:** Create public and private keys using ssh-key-gen on local-host
+**Step 1:** 
+Create public and private keys using ssh-key-gen on local-host
 `ssh-keygen`
 Enter file in which to save the key (~/.ssh/id_rsa):[Enter key]
 Enter passphrase (empty for no passphrase): [Press enter key]
 Enter same passphrase again: [Pess enter key]
 Your identification has been saved in ~/.ssh/id_rsa. 
 Your public key has been saved in ~/.ssh/id_rsa.pub.
-**Step 2:** Copy the public key to remote-host using ssh-copy-id                                 
+
+**Step 2:** 
+Copy the public key to remote-host using ssh-copy-id                                 
 `ssh-copy-id -i ~/.ssh/id_rsa.pub remote-host`
-**Step 3:** Login to remote-host without entering the password
+
+**Step 3:** 
+Login to remote-host without entering the password
 `ssh remote-host`
 
 
